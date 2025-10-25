@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 import os
-from .BaseTool import BaseTool
+from BaseTool import BaseTool
 from typing import Dict, Any, List, Optional
 import json
 from google.oauth2 import service_account
@@ -17,8 +17,8 @@ class FileManager(BaseTool):
     (e.g. name, size, date, contents).
     """
 
-    def __init__(self, name):
-        super().__init__(name=name, description="Drive file manager tool", supported_file_types=None)
+    def __init__(self, task: str = "File Information"):
+        super().__init__(name="File Manager", description="Drive file manager tool", supported_file_types=None)
         # Default Drive API scopes we need
         self.scopes = [
             'https://www.googleapis.com/auth/drive.readonly',
@@ -32,7 +32,8 @@ class FileManager(BaseTool):
         self._service = None
 
     def _build_service(self):
-        """Create a Google Drive service using a service account (preferred).
+        """
+        Create a Google Drive service using a service account (preferred).
 
         Supports either a path to a JSON key file (GOOGLE_SERVICE_ACCOUNT_PATH)
         or a raw JSON string in GOOGLE_SERVICE_ACCOUNT_JSON.
