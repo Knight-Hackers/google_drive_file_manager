@@ -8,8 +8,11 @@ def test_drive_api():
         service = get_drive_service(Access_Token)
         print("Drive service created successfully.")
 
+        about = service.about().get(fields="user").execute()
+        print(about)
+
         files = list_files(service)
-        print(f"Retrived {len(files)} files")
+        print(f"Retreived {len(files)} files")
 
         for file in files:
             print(f"File Name: {file['name']}, ID: {file['id']}")
