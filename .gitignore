@@ -1,7 +1,9 @@
 # Virtual Environment
+frontend/node_modules
 backend/venv
 env
 env/
 
 # Environment variables
 .env
+
