@@ -3,17 +3,6 @@ import './LoginPage.css';
 import { handleGoogleLogin } from './utils/googleAuth';
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
-
-  // do not use this function 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Handle login/signup logic here
-    console.log('Form submitted:', { email, password, isSignUp });
-  };
-
 
   return (
     <div className="login-page">
