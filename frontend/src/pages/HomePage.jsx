@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from "react-router-dom";
 import './HomePage.css';
+import { handleGoogleLogin } from './utils/googleAuth';
 
 const HomePage = () => {
   const [isHovered, setIsHovered] = useState(false);
@@ -50,9 +51,6 @@ const HomePage = () => {
             <span className="logo-text">DriveViz</span>
           </div>
           <div className="nav-links">
-            <a href="#features" className="nav-link">Features</a>
-            <a href="#how-it-works" className="nav-link">How It Works</a>
-            <a href="#about" className="nav-link">About</a>
             <button className="sign-in-button" onClick={() => navigate("/login")}>Sign In</button>
           </div>
         </div>
@@ -71,6 +69,7 @@ const HomePage = () => {
             className="cta-button"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
+            onClick={handleGoogleLogin}
           >
             <span className="google-icon">G</span>
             Connect Google Drive
@@ -147,7 +146,7 @@ const HomePage = () => {
         <div className="cta-content">
           <h2 className="cta-title">Ready to Transform Your Drive?</h2>
           <p className="cta-text">Join thousands of users who've already discovered a better way to manage their files.</p>
-          <button className="cta-button-large">
+          <button onClick={handleGoogleLogin} className="cta-button-large">
             <span className="google-icon">G</span>
             Get Started Now
           </button>
