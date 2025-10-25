@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Header, HTTPException
 from schemas.file_schemas import AnalysisSummary
-from services.drive_service import get_drive_service, list_docx_files
+from services.drive_service import get_drive_service, list_files
 from services.categorize import categorize_files
 
 router = APIRouter()
@@ -10,7 +10,7 @@ router = APIRouter()
 def list_files(authorization: str = Header(...)):
     token = authorization.replace("Bearer ", "")
     service = get_drive_service(token)
-    files = list_docx_files(service)
+    files = list_files(service)
     return {"files": files}
 
 # categorize and analyze files (Heuristic-based)

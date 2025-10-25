@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing from import List, Optional, Dict
+from typing import List, Optional, Dict
 
 class FileMetadata(BaseModel):
     id: str
@@ -9,7 +9,7 @@ class FileMetadata(BaseModel):
     modifiedTime: Optional[str]
 
 class CategorizedFile(BaseModel):
-    name= str
+    name: str
     category: str
     confidence: Optional[float]=None
 
