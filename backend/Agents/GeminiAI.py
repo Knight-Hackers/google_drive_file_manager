@@ -4,6 +4,8 @@ import os
 from typing import List, Dict, Any, Optional
 from google import genai
 
+load_dotenv()
+
 class GeminiAI(BaseAgent):
 
     """
@@ -33,8 +35,6 @@ class GeminiAI(BaseAgent):
             
             """
         )
-
-        load_dotenv()
 
         GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
 
