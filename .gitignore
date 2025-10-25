@@ -2,6 +2,14 @@
 backend/venv
 env
 env/
+.venv
 
 # Environment variables
 .env
+backend/.env
+backend/Agents/.env
+
+# Json variables
+.Json
+backend/.Json
+backend/Agents/.Json

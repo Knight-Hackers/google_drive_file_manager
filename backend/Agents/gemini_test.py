@@ -1,14 +1,26 @@
-from google import genai
-import os
-from dotenv import load_dotenv
+from GeminiAI import GeminiAI
 
-load_dotenv()
+if __name__ == "__main__":
+    message = "What are some good strategies for file organization?"
 
-GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
+    response = GeminiAI().process_message(message=message)
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+    print("Gemini Response")
 
-response = client.models.generate_content(
-    model="gemini-2.5-flash", contents="Explain how AI works in a few words. Please respond in the form of a dictionary/json format with 'message' as one of the headers. "
-)
-print(response.text)
+    print(response)
+
+    print("\n\nPrinting message only\n\n")
+
+    print(response['Message'])
+
+    message = "Access my google drive files"
+
+    response = GeminiAI().process_message(message=message)
+
+    print("Gemini Response")
+
+    print(response)
+
+    print("\n\nPrinting Tools Only\n\n")
+
+    print(response["Tools"])
