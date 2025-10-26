@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from BaseTool import BaseTool
+from .BaseTool import BaseTool
 from typing import Any, Dict, List, Optional
 from pathlib import Path
 import json

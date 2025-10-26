@@ -15,3 +15,4 @@ backend/Agents/.env
 backend/.json
 backend/Agents/.json
 backend/Agents/crack-saga-473919-e5-a50b5d990b61.json
+.pyc

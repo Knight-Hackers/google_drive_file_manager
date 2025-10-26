@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from BaseAgent import BaseAgent
+from .BaseAgent import BaseAgent
 import os
 from typing import List, Dict, Any, Optional, Union
 from google import genai
@@ -7,8 +7,8 @@ from google.genai import types
 import json
 import re
 import ast
-from FileManager import FileManager
-from MindMap import MindMap # Boilerplate for now, will have to look into other implementations
+from .FileManager import FileManager
+from .MindMap import MindMap # Boilerplate for now, will have to look into other implementations
 
 load_dotenv()
 

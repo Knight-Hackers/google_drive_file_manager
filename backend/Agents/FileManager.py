@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 import os
-from BaseTool import BaseTool
+from .BaseTool import BaseTool
 from typing import Dict, Any, List, Optional
 import json
 from googleapiclient.discovery import build

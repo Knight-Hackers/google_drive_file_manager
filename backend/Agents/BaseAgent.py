@@ -5,7 +5,7 @@ import json
 import asyncio
 from pathlib import Path
 import os
-from BaseTool import BaseTool
+from .BaseTool import BaseTool
 
 class BaseAgent:
     """Base class for all agents with core message processing and tool handling capabilities."""
