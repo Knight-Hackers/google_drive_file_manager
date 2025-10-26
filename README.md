@@ -1,4 +1,4 @@
-### Google Drive File Manager
+# Google Drive File Manager
 
 ## Purpose and Goals
 
@@ -17,17 +17,24 @@
 
 Generate a Gemini API key by navigating to Google AI Studio, clicking on "get API key" on the bottom right corner, and clicking on "create API key" on the top right corner. Create a new project in google cloud spaces. Under API's and Services, navigate to credentials. Make sure to create an API key, an OAuth 2.0 client ID, and a service account. Make sure to keep note of your provided API key and client ID. When creating your service account, download the json file associated with it. Keep the API key and client ID stored in a .env file within the same directory as the json file, which will be the Agents directory in this repository. 
 
-# Bellow is an example of how your .env file should look like:
+### Bellow is an example of how your .env file should look like:
 
 GOOGLE_GENAI_USE_VERTEXAI=0
+
 GOOGLE_API_KEY=YOUR_API_KEY
+
 GOOGLE_CLOUD_PROJECT=YOUR_CLOUD_PROJECT
+
 GOOGLE_CLOUD_LOCATION=LOCATION_PROVIDED
+
 GOOGLE_SERVICE_ACCOUNT_JSON='path/to/.json'
 
 GOOGLE_DRIVE_CLIENT_ID="client_id_in_OAuth.com"
+
 GOOGLE_DRIVE_CLIENT_SECRET="YOUR_SECRET_KEY"
+
 GOOGLE_DRIVE_REFRESH_TOKEN="YOUR_OBTAINED_REFRESH_TOKEN"
+
 GOOGLE_DRIVE_SCOPES='https://www.googleapis.com/auth/drive.readonly' 
 
 ## Applications
