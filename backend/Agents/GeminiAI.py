@@ -116,8 +116,7 @@ class GeminiAI(BaseAgent):
         files = self.fm.list_files()
         file_names = [file['name'] for file in files]
 
-        out = self.process_message(message="", file_names=file_names)
-        print(out)
+        self.out = self.process_message(message="", file_names=file_names)
 
     def process_message(self, message: str = "", file_names: List[Dict[str, Any]] = []):
 
@@ -158,8 +157,11 @@ class GeminiAI(BaseAgent):
         except Exception:
             pass
     
-        return output
+        self.out = output
         
+    def get_output(self):
+        return self.out
+
     def process_file_request(self, task={'action': 'list_files', 'q': 'trashed = false', 'page_size': 100}):
         """
         Post-message processing, FileManager tool acts to collect files from the drive
