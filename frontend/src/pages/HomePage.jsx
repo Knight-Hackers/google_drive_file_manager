@@ -3,6 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import './HomePage.css';
 import { handleGoogleLogin } from './utils/googleAuth';
 
+
+// add button for heuristic or gemini approach
 const HomePage = () => {
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();

@@ -45,4 +45,6 @@ def oauth2callback(request: Request):
     tokens = resp.json()  # contains access_token and refresh_token
 
     # You now have the access token to call your endpoints
-    return tokens
+    frontend_redirect=f"http://localhost:5173/oauth-callback?access_token={tokens['access_token']}"
+    return RedirectResponse(frontend_redirect) 
+

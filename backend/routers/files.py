@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Header, HTTPException
 from schemas.file_schemas import AnalysisSummary
 from routers_help.drive_service import get_drive_service, list_files
-from routers_help.categorize import categorize_files
+from routers_help.categorize import categorize_files, categorize_files_gemini 
 
 router = APIRouter()
 
@@ -14,10 +14,20 @@ def list_files_route(authorization: str = Header(...)): # function expects a hea
     return {"files": files} # wrap metadate list into dictionary and return as a JSON response
 
 # categorize and analyze files (Heuristic-based)
-@router.post("/analyze", response_model=AnalysisSummary)
+@router.post("/analyze/heuristic", response_model=AnalysisSummary)
 def analyze_files(authorization: str = Header(...)):
     token = authorization.replace("Bearer ", "")
     service = get_drive_service(token)
     files = list_files(service)
     result = categorize_files(files)
+    return result
+
+# categorize and analyze files (Gemini-based)
+@router.post("/analyze/gemini", response_model=AnalysisSummary)
+def analyze_files(authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    service = get_drive_service(token)
+    files = list_files(service)
+    result = categorize_files_gemini(files)
+    print("Gemini analysis")    
     return result
