@@ -66,6 +66,9 @@ class GeminiAI(BaseAgent):
             2. Provide inputs within the json file so that another tool can generate a mind map off of it.
             3. Send requests to a tool so that it can process your request and act on it to organize the users drive.
             
+
+            I need you to create categories that best fit the files in the users google drive based on the file names provided.
+            Once you have created the categories, please be consistent and assign each file to one of the categories you have created.
             An example of an output for the MindMap json file structure is as follows: 
 
             {
