@@ -10,6 +10,7 @@ backend/.env
 backend/Agents/.env
 
 # Json variables
-.Json
-backend/.Json
-backend/Agents/.Json
+.json
+backend/.json
+backend/Agents/.json
+backend/Agents/crack-saga-473919-e5-a50b5d990b61.json

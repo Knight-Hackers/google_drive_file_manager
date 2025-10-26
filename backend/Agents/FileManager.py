@@ -1,20 +1,12 @@
 from dotenv import load_dotenv
 import os
-from .BaseTool import BaseTool
+from BaseTool import BaseTool
 from typing import Dict, Any, List, Optional
 import json
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import io
 from googleapiclient.http import MediaIoBaseDownload
-
-
-# Optional Gemini integration (if google genai is installed and GOOGLE_API_KEY is set)
-try:
-    from google import genai
-except Exception:
-    genai = None
-
 
 load_dotenv()
 
@@ -143,6 +135,12 @@ class FileManager(BaseTool):
                 raise ValueError('folder_id is required for list_folder')
             return {'files': self.list_files(q=f"'{folder_id}' in parents and trashed = false")}
 
+        if action == 'retreive_file':
+            file_id = payload.get('file_id')
+            if not file_id: 
+                raise ValueError('file_id is required for retreive_file')
+            return {'file': self.retrieve_file(file_id=file_id)}
+
         raise ValueError(f'Unknown action: {action}')
 
     def get_file_count(self, q: Optional[str] = None) -> int:
@@ -176,6 +174,38 @@ class FileManager(BaseTool):
     def get_file_metadata(self, file_id: str) -> Dict[str, Any]:
         service = self._build_service()
         return service.files().get(fileId=file_id, fields='id, name, mimeType, parents, md5Checksum, size, createdTime, modifiedTime').execute()
+
+    def retrieve_file(self, file_id: str, export_mime: Optional[str] = None) -> tuple[Any, str, str]:
+        """Get a media request for a Drive file without downloading it.
+        
+        Returns (request, filename, mimetype) where request can be used with MediaIoBaseDownload
+        or passed to other APIs that accept Drive file content. For Google Docs/Sheets/Slides,
+        will export to sensible formats by default (text/plain for Docs, text/csv for Sheets,
+        application/pdf for Slides) unless export_mime is provided.
+        """
+        service = self._build_service()
+        # get basic metadata to decide method
+        meta = service.files().get(fileId=file_id, fields='id, name, mimeType').execute()
+        mime = meta.get('mimeType')
+        name = meta.get('name')
+
+        # Google Docs family: export
+        if mime and mime.startswith('application/vnd.google-apps.'):
+            # choose export mime based on type
+            if mime == 'application/vnd.google-apps.document':
+                out_mime = export_mime or 'text/plain'
+            elif mime == 'application/vnd.google-apps.spreadsheet':
+                out_mime = export_mime or 'text/csv'
+            elif mime == 'application/vnd.google-apps.presentation':
+                out_mime = export_mime or 'application/pdf'
+            else:
+                out_mime = export_mime or 'text/plain'
+            request = service.files().export_media(fileId=file_id, mimeType=out_mime)
+            return request, name, out_mime
+        else:
+            # regular file: download binary
+            request = service.files().get_media(fileId=file_id)
+            return request, name, mime
 
     def download_file_content(self, file_id: str, export_mime: Optional[str] = None) -> tuple[bytes, str]:
         """Download a file's content from Drive.
@@ -216,33 +246,3 @@ class FileManager(BaseTool):
             status, done = downloader.next_chunk()
 
         return fh.getvalue(), name
-
-    def send_file_to_gemini(self, file_id: str, model: str = 'gemini-2.5-flash', max_chars: int = 30000, export_mime: Optional[str] = None) -> str:
-        """Download a file, convert to text when possible, truncate, and send to Gemini.
-
-        Returns Gemini's textual response. Raises RuntimeError for missing API key or gemini client.
-        """
-        api_key = os.getenv('GOOGLE_API_KEY')
-        if not api_key:
-            raise RuntimeError('GOOGLE_API_KEY (Gemini API key) not set in environment')
-        if genai is None:
-            raise RuntimeError('google.genai library not available in the environment')
-
-        # download content
-        content_bytes, name = self.download_file_content(file_id, export_mime=export_mime)
-
-        # try decode
-        try:
-            content_text = content_bytes.decode('utf-8')
-        except Exception:
-            raise RuntimeError('Downloaded content is binary or could not be decoded as UTF-8; consider exporting to a textual mime type')
-
-        # truncate
-        text_to_send = content_text if len(content_text) <= max_chars else content_text[:max_chars] + "\n\n...[truncated]..."
-
-        client = genai.Client(api_key=api_key)
-        resp = client.models.generate_content(model=model, contents=text_to_send)
-        try:
-            return resp.text
-        except Exception:
-            return str(resp)
