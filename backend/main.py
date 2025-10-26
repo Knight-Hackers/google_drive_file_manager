@@ -14,13 +14,12 @@ app = FastAPI(
 
 origins = [
     "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:8000"
+    "http://127.0.0.1:5173"
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # Frontend URLs allowed to talk to backend
+    allow_origins=["*"],  # Frontend URLs allowed to talk to backend
     allow_credentials=True,
     allow_methods=["*"],    # Allow all HTTP methods
     allow_headers=["*"],    # Allow all headers (including Authorization)

@@ -64,7 +64,7 @@ const DriveDashboard = () => {
         ? '/files/analyze/heuristic' 
         : '/files/analyze/gemini';
       
-      const response = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+      const response = await fetch(`http://localhost:8000${endpoint}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`}
       }
@@ -108,26 +108,24 @@ const DriveDashboard = () => {
       };
     } else {
       return {
-        total_files: 487,
+        total_files: 9,
         categories: {
-          "Career Development": 98,
-          "Creative Projects": 67,
-          "Financial Planning": 45,
-          "Health & Wellness": 52,
-          "Learning & Education": 89,
-          "Personal Memories": 136
+          "Personal Development": 3,
+          "Job Applications": 2,
+          "Exam Material": 1,
+          "Personal Finance": 1,
+          "Schoolwork": 2
         },
         files: [
-          {name: "Q4 Report.docx", category: "Career Development", size: "2.3 MB", modified: "2025-10-20"},
-          {name: "Resume 2025.pdf", category: "Career Development", size: "156 KB", modified: "2025-10-18"},
-          {name: "Novel Draft Chapter 3.docx", category: "Creative Projects", size: "245 KB", modified: "2025-10-17"},
-          {name: "Photography Portfolio.pdf", category: "Creative Projects", size: "12 MB", modified: "2025-10-15"},
-          {name: "Budget 2025.xlsx", category: "Financial Planning", size: "890 KB", modified: "2025-10-14"},
-          {name: "Investment Research.pdf", category: "Financial Planning", size: "3.4 MB", modified: "2025-10-12"},
-          {name: "Workout Plan.docx", category: "Health & Wellness", size: "67 KB", modified: "2025-10-20"},
-          {name: "Meal Prep Ideas.pdf", category: "Health & Wellness", size: "234 KB", modified: "2025-10-18"},
-          {name: "Python Course Notes.docx", category: "Learning & Education", size: "456 KB", modified: "2025-10-19"},
-          {name: "Birthday Photos 2025.zip", category: "Personal Memories", size: "45 MB", modified: "2025-10-10"},
+          {name: "Journal entry 1", category: "Personal Development"},
+          {name: "Motivation", category: "Personal Development"},
+          {name: "Siemens cover letter", category: "Job Applications"},
+          {name: "Trivago cover letter", category: "Job Applications"},
+          {name: "Journal entry", category: "Personal Development"},
+          {name: "Exam notes", category: "Exam Material"},
+          {name: "Taxes", category: "Personal Finance"},
+          {name: "science homework", category: "Schoolwork"},
+          {name: "Math homework", category: "Schoolwork"}
         ]
       };
     }
@@ -176,7 +174,7 @@ const DriveDashboard = () => {
       </div>
     );
   }
-
+  console.log(driveData);
   const totalCategories = Object.keys(driveData.categories).length;
 
   return (
