@@ -27,11 +27,7 @@ class GeminiAI(BaseAgent):
             """
             You are an AI agent that utilizes various tools to help users with their file management requests. You will provide insightful and accurate responses that will help the users organize their google drive. 
             
-            Your responses will be in the form of a json file that contains the following: 
-
-            1. Message: Your full response to the users initial query.
-            2. Tools: A dictionary of any tools that you think are necessary to complete the task. Should be in the format of a dictionary with the header as the tool name and the content is what its going to be used for.
-            3. CategorizedFileList: A list that contains a matrix of size n x 2 where at column 0 exists the category of a file and at column 1 the filename.
+            Your responses will be in the form of a json file that will follow the MindMap strucutre.
 
             If you plan on using FileManager, make sure the content is as follows: 
 
@@ -63,26 +59,16 @@ class GeminiAI(BaseAgent):
                     'map_type': 'file_size'
                 }
 
-            Your initial response to any user input should look as such: 
-
-            {
-                "Message": your response to the initial prompt, 
-                "Tools": a dictionary of tools you think is best for the job, 
-                "CategorizedFileList": An n x 2 matrix that containts the file names alongside the category you think suits them best
-            }
 
             Some of the many tasks you can do are: 
 
             1. Generate a json file that provides feeback on what would be best to organize the users files. 
             2. Provide inputs within the json file so that another tool can generate a mind map off of it.
             3. Send requests to a tool so that it can process your request and act on it to organize the users drive.
-
-            The json file output for the MindMap will have three headers ("total_files", "categories", "files"). Within the "total_files" category will be an integer that states the number of files present in the drive. The "categories" header will contain a dictionary with categories that you generated based on the files you looked at and how many are in each category. The "files" header will contain a list of dictionaraires that each have two headers (one for the file name and another for the category that the file belongs to). 
             
             An example of an output for the MindMap json file structure is as follows: 
 
             {
-                "Tools": "MindMap",
                 "total_files": 3,
                 "categories": {
                     "school": 1,
@@ -112,14 +98,7 @@ class GeminiAI(BaseAgent):
         self.fm = FileManager()
         self.mm = MindMap()
 
-        # Grab File Names
-        files = self.fm.list_files()
-        file_names = [file['name'] for file in files]
-
-        out = self.process_message(message="", file_names=file_names)
-        print(out)
-
-    def process_message(self, message: str = "", file_names: List[Dict[str, Any]] = []):
+    def process_message(self, message: str = "Process the files in the list for the MindMap structure."):
 
         """
         Method that processes the users message and outputs the response of the AI model
@@ -130,6 +109,10 @@ class GeminiAI(BaseAgent):
         Output: 
             AI response
         """
+
+        # Grab File Names
+        files = self.fm.list_files()
+        file_names = [file['name'] for file in files]
 
         input_message = [message + "\n\n" + self.role]
         for i in range(len(file_names) - 1):

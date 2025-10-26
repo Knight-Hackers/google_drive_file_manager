@@ -5,7 +5,7 @@ if __name__ == "__main__":
 
     app = GeminiAI()
 
-    # message = "Process the following files"
+    output = app.process_message()
+    print(output)
 
-    # agent = GeminiAI().process_message()
 

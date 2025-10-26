@@ -3,10 +3,13 @@ import os
 from BaseTool import BaseTool
 from typing import Dict, Any, List, Optional
 import json
-from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import io
 from googleapiclient.http import MediaIoBaseDownload
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
+import json
+from pathlib import Path
 
 load_dotenv()
 
@@ -34,71 +37,46 @@ class FileManager(BaseTool):
 
     def _build_service(self):
         """
-        Create a Google Drive service using a service account (preferred).
+        Create a Google Drive service using the user's OAuth2 tokens (not a service account).
 
-        Supports either a path to a JSON key file (GOOGLE_SERVICE_ACCOUNT_PATH)
-        or a raw JSON string in GOOGLE_SERVICE_ACCOUNT_JSON.
-
-        This method is resilient to the following common problems:
-        - GOOGLE_SERVICE_ACCOUNT_JSON being an empty string or whitespace
-        - GOOGLE_SERVICE_ACCOUNT_JSON being a quoted JSON string (wrapped in ' or ")
-        - GOOGLE_SERVICE_ACCOUNT_JSON actually containing a path to a JSON file
+        Expects a tokens.json file that contains 'access_token' and 'refresh_token'.
+        Automatically refreshes the access token if expired.
         """
         if self._service:
             return self._service
 
-        creds = None
-        # 1) Path to JSON key file
-        if self.service_account_path and os.path.exists(self.service_account_path):
-            creds = service_account.Credentials.from_service_account_file(self.service_account_path, scopes=self.scopes)
-        # 2) Raw JSON or a value provided in env
-        elif self.service_account_json is not None:
-            raw = self.service_account_json.strip()
-            # treat blank/empty as not provided
-            if raw == "":
-                raw = None
-            else:
-                # If the env value looks like a path, try resolving it in multiple locations
-                path_candidate = None
-                if not (raw.startswith('{') or raw.startswith('[')):
-                    # 2a) Raw path as given (absolute or relative to cwd)
-                    if os.path.exists(raw):
-                        path_candidate = raw
-                    else:
-                        # 2b) Try resolving relative to this file's directory (common when key lives in package)
-                        alt = os.path.join(os.path.dirname(__file__), raw)
-                        if os.path.exists(alt):
-                            path_candidate = alt
-                if path_candidate:
-                    creds = service_account.Credentials.from_service_account_file(path_candidate, scopes=self.scopes)
-                else:
-                    # Attempt to parse JSON. Handle common quoting mistakes (e.g., value wrapped in quotes).
-                    try:
-                        info = json.loads(raw)
-                        creds = service_account.Credentials.from_service_account_info(info, scopes=self.scopes)
-                    except Exception:
-                        # Try unwrapping surrounding quotes then parse again
-                        try:
-                            unwrapped = raw.strip('"').strip("'")
-                            info = json.loads(unwrapped)
-                            creds = service_account.Credentials.from_service_account_info(info, scopes=self.scopes)
-                        except Exception as e:
-                            # Provide helpful debug in the error message without leaking secrets
-                            sample = (raw[:100] + '...') if raw and len(raw) > 100 else raw
-                            raise RuntimeError(
-                                "Failed to parse GOOGLE_SERVICE_ACCOUNT_JSON. "
-                                "Make sure the environment variable contains valid JSON (no surrounding quotes), or set "
-                                "GOOGLE_SERVICE_ACCOUNT_PATH to the key file path. "
-                                f"Sample start: {sample!r}. Parse error: {e}"
-                            )
-        # 3) Nothing usable found
-        if creds is None:
-            raise RuntimeError(
-                "No usable service account credentials found. Set GOOGLE_SERVICE_ACCOUNT_PATH to the JSON key file path, or "
-                "set GOOGLE_SERVICE_ACCOUNT_JSON to the raw JSON (no extra quotes) representing the service account key."
-            )
+        BASE_DIR = Path(__file__).resolve().parent
+        TOKEN_PATH = BASE_DIR / "tokens.json"
+        if not os.path.exists(TOKEN_PATH):
+            raise RuntimeError("No user tokens found. Please authenticate via /user/login first.")
 
-        self._service = build('drive', 'v3', credentials=creds)
+        with open(TOKEN_PATH, "r") as f:
+            tokens = json.load(f)
+
+        # Build credentials object using user's tokens
+        creds = Credentials(
+            token=tokens.get("access_token"),
+            refresh_token=tokens.get("refresh_token"),
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id="1036975395025-cr4f5c03p4o3v38a7m4tnsllja3njl0v.apps.googleusercontent.com",
+            client_secret="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",
+            scopes=self.scopes
+        )
+
+        # Refresh automatically if expired
+        if not creds.valid:
+            if creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+                # Save the new access token back to tokens.json
+                with open(TOKEN_PATH, "w") as f:
+                    json.dump({
+                        "access_token": creds.token,
+                        "refresh_token": creds.refresh_token,
+                        "expiry": creds.expiry.isoformat() if creds.expiry else None
+                    }, f, indent=2)
+
+        # Build the Drive API client
+        self._service = build("drive", "v3", credentials=creds)
         return self._service
 
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:

@@ -3,6 +3,8 @@ from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 import requests
 import urllib.parse
+import json
+from pathlib import Path
 
 router = APIRouter()
 
@@ -10,6 +12,7 @@ CLIENT_ID = "1036975395025-cr4f5c03p4o3v38a7m4tnsllja3njl0v.apps.googleuserconte
 CLIENT_SECRET = "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"
 REDIRECT_URI = "http://localhost:8000/user/oauth2callback"
 SCOPE = "https://www.googleapis.com/auth/drive.readonly email profile"
+TOKEN_PATH = Path("./Agents/tokens.json")
 
 # Step 1: redirect user to Google login
 @router.get("/login")
@@ -44,6 +47,9 @@ def oauth2callback(request: Request):
     resp = requests.post(token_endpoint, data=data)
     tokens = resp.json()  # contains access_token and refresh_token
 
+    TOKEN_PATH.write_text(json.dumps(tokens, indent=2))
+    print("✅ Tokens saved to", TOKEN_PATH.resolve())
+    
     # You now have the access token to call your endpoints
     frontend_redirect=f"http://localhost:5173/oauth-callback?access_token={tokens['access_token']}"
     return RedirectResponse(frontend_redirect) 
