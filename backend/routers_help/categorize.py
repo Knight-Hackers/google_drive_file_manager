@@ -1,8 +1,8 @@
 def categorize_files(files):
     categories = {
-        "school": ["assignment", "essay", "homework", "class"],
-        "work": ["project", "report", "meeting", "invoice"],
-        "personal": ["resume", "recipe", "journal", "budget"]
+        "school": ["assignment", "essay", "homework", "class", "exam", "lecture", "notes"],
+        "work": ["project", "report", "meeting", "invoice", "presentation", "proposal"],
+        "personal": ["resume", "recipe", "journal", "budget", "letter"]
     }
 
     categorized = []
@@ -26,9 +26,9 @@ def categorize_files(files):
 
 def categorize_files_gemini(files):
     categories = {
-        "school": ["assignment", "essay", "homework", "class"],
-        "work": ["project", "report", "meeting", "invoice"],
-        "personal": ["resume", "recipe", "journal", "budget"]
+        "school": ["assignment", "essay", "homework", "class", "exam", "lecture", "notes"],
+        "work": ["project", "report", "meeting", "invoice", "presentation", "proposal"],
+        "personal": ["resume", "recipe", "journal", "budget", "letter"]
     }
 
     categorized = []
