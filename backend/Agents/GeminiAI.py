@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from BaseAgent import BaseAgent
 import os
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from google import genai
 import json
 import re
@@ -18,7 +18,7 @@ class GeminiAI(BaseAgent):
     Uses FileManager to gain access to files, organize them and output via json, and sends it back to FileManager so that it can process the request. 
     """
 
-    def __init__(self, tools: Dict[str, object] = None, model: str = "gemini-2.5-flash"):
+    def __init__(self, model: str = "gemini-2.5-flash"):
 
         super().__init__(
             name="Gemini AI Agent", 
@@ -58,8 +58,10 @@ class GeminiAI(BaseAgent):
         self.model = model
         self.client = genai.Client(api_key=GEMINI_API_KEY)
 
-        self.FileManager = FileManager()
-        self.MindMapGenerator = MindMap()
+        self.tools: Dict[str, (FileManager, MindMap)] = {
+            "FileManager": FileManager(),
+            "MindMap": MindMap()
+        }
 
     def process_message(self, message: str):
 
@@ -108,8 +110,8 @@ class GeminiAI(BaseAgent):
         
     def process_file_request(self, task):
 
-        self.FileManager.run(task)
+        self.tools["FileManager"].run(task)
 
     def process_mind_map_request(self, task):
 
-        self.MindMapGenerator.run(task)
+        self.tools["MindMap"].run(task)

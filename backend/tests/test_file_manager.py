@@ -1,25 +1,26 @@
 import os
 import json
 import pytest
+from pytest import MonkeyPatch
 from unittest.mock import MagicMock
 
-from Agents.FileManager import FileManager
+from backend.Agents.FileManager import FileManager
 
 
-def test_build_service_raises_when_no_credentials(monkeypatch, tmp_path):
+def test_build_service_raises_when_no_credentials(monkeypatch: MonkeyPatch):
     # Ensure env vars are not set
-    monkeypatch.delenv('GOOGLE_SERVICE_ACCOUNT_PATH', raising=False)
-    monkeypatch.delenv('GOOGLE_SERVICE_ACCOUNT_JSON', raising=False)
+    monkeypatch.delenv(name='GOOGLE_SERVICE_ACCOUNT_PATH', raising=False)
+    monkeypatch.delenv(name='GOOGLE_SERVICE_ACCOUNT_JSON', raising=False)
 
-    fm = FileManager(name='fm')
+    fm = FileManager(task="File Management")
     # _build_service should raise when no credentials are configured
     with pytest.raises(RuntimeError):
         fm._build_service()
 
 
-def test_list_files_pagination(monkeypatch):
+def test_list_files_pagination(monkeypatch: MonkeyPatch):
     # Create a FileManager and monkeypatch its _build_service to return a mock service
-    fm = FileManager(name='fm')
+    fm = FileManager()
 
     mock_service = MagicMock()
     # Prepare two pages of results
@@ -40,8 +41,8 @@ def test_list_files_pagination(monkeypatch):
     assert files[1]['name'] == 'file_b'
 
 
-def test_get_file_count_pages(monkeypatch):
-    fm = FileManager(name='fm')
+def test_get_file_count_pages(monkeypatch: MonkeyPatch):
+    fm = FileManager()
     mock_service = MagicMock()
 
     # Simulate three pages of results
@@ -57,8 +58,8 @@ def test_get_file_count_pages(monkeypatch):
     assert count == 3
 
 
-def test_execute_dispatches_actions(monkeypatch):
-    fm = FileManager(name='fm')
+def test_execute_dispatches_actions(monkeypatch: MonkeyPatch):
+    fm = FileManager()
 
     # Mock underlying methods to verify execute routes correctly
     monkeypatch.setattr(fm, 'list_files', lambda q=None, page_size=100: [{'id': 'x'}])
@@ -79,6 +80,11 @@ def test_execute_dispatches_actions(monkeypatch):
     res_folder = fm.execute({'action': 'list_folder', 'folder_id': 'F123'})
     assert res_folder['files'][0]['id'] == 'in_folder'
 
+def test_env_interaction():
+    return
 
 # If you want to run these tests locally:
 # python -m pytest backend/tests/test_file_manager.py -q
+# if __name__ == "__main__":
+#     monkey_patch = MonkeyPatch()
+#     test_list_files_pagination(monkey_patch)

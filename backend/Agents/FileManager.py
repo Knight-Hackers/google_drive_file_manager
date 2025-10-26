@@ -1,10 +1,19 @@
 from dotenv import load_dotenv
 import os
-from BaseTool import BaseTool
+from .BaseTool import BaseTool
 from typing import Dict, Any, List, Optional
 import json
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
+import io
+from googleapiclient.http import MediaIoBaseDownload
+
+
+# Optional Gemini integration (if google genai is installed and GOOGLE_API_KEY is set)
+try:
+    from google import genai
+except Exception:
+    genai = None
 
 
 load_dotenv()
@@ -17,7 +26,7 @@ class FileManager(BaseTool):
     (e.g. name, size, date, contents).
     """
 
-    def __init__(self, task: str = "File Information"):
+    def __init__(self):
         super().__init__(name="File Manager", description="Drive file manager tool", supported_file_types=None)
         # Default Drive API scopes we need
         self.scopes = [
@@ -37,21 +46,65 @@ class FileManager(BaseTool):
 
         Supports either a path to a JSON key file (GOOGLE_SERVICE_ACCOUNT_PATH)
         or a raw JSON string in GOOGLE_SERVICE_ACCOUNT_JSON.
+
+        This method is resilient to the following common problems:
+        - GOOGLE_SERVICE_ACCOUNT_JSON being an empty string or whitespace
+        - GOOGLE_SERVICE_ACCOUNT_JSON being a quoted JSON string (wrapped in ' or ")
+        - GOOGLE_SERVICE_ACCOUNT_JSON actually containing a path to a JSON file
         """
         if self._service:
             return self._service
 
         creds = None
+        # 1) Path to JSON key file
         if self.service_account_path and os.path.exists(self.service_account_path):
             creds = service_account.Credentials.from_service_account_file(self.service_account_path, scopes=self.scopes)
-        elif self.service_account_json:
-            try:
-                info = json.loads(self.service_account_json)
-                creds = service_account.Credentials.from_service_account_info(info, scopes=self.scopes)
-            except Exception as e:
-                raise RuntimeError(f"Failed to parse GOOGLE_SERVICE_ACCOUNT_JSON: {e}")
-        else:
-            raise RuntimeError("No service account configured. Set GOOGLE_SERVICE_ACCOUNT_PATH or GOOGLE_SERVICE_ACCOUNT_JSON in environment.")
+        # 2) Raw JSON or a value provided in env
+        elif self.service_account_json is not None:
+            raw = self.service_account_json.strip()
+            # treat blank/empty as not provided
+            if raw == "":
+                raw = None
+            else:
+                # If the env value looks like a path, try resolving it in multiple locations
+                path_candidate = None
+                if not (raw.startswith('{') or raw.startswith('[')):
+                    # 2a) Raw path as given (absolute or relative to cwd)
+                    if os.path.exists(raw):
+                        path_candidate = raw
+                    else:
+                        # 2b) Try resolving relative to this file's directory (common when key lives in package)
+                        alt = os.path.join(os.path.dirname(__file__), raw)
+                        if os.path.exists(alt):
+                            path_candidate = alt
+                if path_candidate:
+                    creds = service_account.Credentials.from_service_account_file(path_candidate, scopes=self.scopes)
+                else:
+                    # Attempt to parse JSON. Handle common quoting mistakes (e.g., value wrapped in quotes).
+                    try:
+                        info = json.loads(raw)
+                        creds = service_account.Credentials.from_service_account_info(info, scopes=self.scopes)
+                    except Exception:
+                        # Try unwrapping surrounding quotes then parse again
+                        try:
+                            unwrapped = raw.strip('"').strip("'")
+                            info = json.loads(unwrapped)
+                            creds = service_account.Credentials.from_service_account_info(info, scopes=self.scopes)
+                        except Exception as e:
+                            # Provide helpful debug in the error message without leaking secrets
+                            sample = (raw[:100] + '...') if raw and len(raw) > 100 else raw
+                            raise RuntimeError(
+                                "Failed to parse GOOGLE_SERVICE_ACCOUNT_JSON. "
+                                "Make sure the environment variable contains valid JSON (no surrounding quotes), or set "
+                                "GOOGLE_SERVICE_ACCOUNT_PATH to the key file path. "
+                                f"Sample start: {sample!r}. Parse error: {e}"
+                            )
+        # 3) Nothing usable found
+        if creds is None:
+            raise RuntimeError(
+                "No usable service account credentials found. Set GOOGLE_SERVICE_ACCOUNT_PATH to the JSON key file path, or "
+                "set GOOGLE_SERVICE_ACCOUNT_JSON to the raw JSON (no extra quotes) representing the service account key."
+            )
 
         self._service = build('drive', 'v3', credentials=creds)
         return self._service
@@ -68,8 +121,6 @@ class FileManager(BaseTool):
         action = payload.get('action')
         if not action:
             raise ValueError("payload must include 'action'")
-
-        service = self._build_service()
 
         if action == 'list_files':
             q = payload.get('q', "trashed = false")
@@ -125,3 +176,73 @@ class FileManager(BaseTool):
     def get_file_metadata(self, file_id: str) -> Dict[str, Any]:
         service = self._build_service()
         return service.files().get(fileId=file_id, fields='id, name, mimeType, parents, md5Checksum, size, createdTime, modifiedTime').execute()
+
+    def download_file_content(self, file_id: str, export_mime: Optional[str] = None) -> tuple[bytes, str]:
+        """Download a file's content from Drive.
+
+        Returns (bytes_content, filename).
+        For Google Docs/Sheets/Slides this will export to a sensible textual format by default
+        (text/plain for Docs, text/csv for Sheets, application/pdf for Slides) unless an
+        explicit export_mime is provided.
+        """
+        service = self._build_service()
+        # get basic metadata to decide method
+        meta = service.files().get(fileId=file_id, fields='id, name, mimeType').execute()
+        mime = meta.get('mimeType')
+        name = meta.get('name')
+
+        fh = io.BytesIO()
+
+        # Google Docs family: export
+        if mime and mime.startswith('application/vnd.google-apps.'):
+            # choose export mime based on type
+            if mime == 'application/vnd.google-apps.document':
+                out_mime = export_mime or 'text/plain'
+            elif mime == 'application/vnd.google-apps.spreadsheet':
+                out_mime = export_mime or 'text/csv'
+            elif mime == 'application/vnd.google-apps.presentation':
+                out_mime = export_mime or 'application/pdf'
+            else:
+                out_mime = export_mime or 'text/plain'
+            request = service.files().export_media(fileId=file_id, mimeType=out_mime)
+            downloader = MediaIoBaseDownload(fh, request)
+        else:
+            # regular file: download binary
+            request = service.files().get_media(fileId=file_id)
+            downloader = MediaIoBaseDownload(fh, request)
+
+        done = False
+        while not done:
+            status, done = downloader.next_chunk()
+
+        return fh.getvalue(), name
+
+    def send_file_to_gemini(self, file_id: str, model: str = 'gemini-2.5-flash', max_chars: int = 30000, export_mime: Optional[str] = None) -> str:
+        """Download a file, convert to text when possible, truncate, and send to Gemini.
+
+        Returns Gemini's textual response. Raises RuntimeError for missing API key or gemini client.
+        """
+        api_key = os.getenv('GOOGLE_API_KEY')
+        if not api_key:
+            raise RuntimeError('GOOGLE_API_KEY (Gemini API key) not set in environment')
+        if genai is None:
+            raise RuntimeError('google.genai library not available in the environment')
+
+        # download content
+        content_bytes, name = self.download_file_content(file_id, export_mime=export_mime)
+
+        # try decode
+        try:
+            content_text = content_bytes.decode('utf-8')
+        except Exception:
+            raise RuntimeError('Downloaded content is binary or could not be decoded as UTF-8; consider exporting to a textual mime type')
+
+        # truncate
+        text_to_send = content_text if len(content_text) <= max_chars else content_text[:max_chars] + "\n\n...[truncated]..."
+
+        client = genai.Client(api_key=api_key)
+        resp = client.models.generate_content(model=model, contents=text_to_send)
+        try:
+            return resp.text
+        except Exception:
+            return str(resp)
