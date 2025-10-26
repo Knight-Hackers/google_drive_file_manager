@@ -110,7 +110,7 @@ class GeminiAI(BaseAgent):
 
         # Geminis tool access
         self.fm = FileManager()
-        self.mm = MindMap()
+        # self.mm = MindMap()
 
         # Grab File Names
         files = self.fm.list_files()
@@ -168,8 +168,8 @@ class GeminiAI(BaseAgent):
         """
         self.fm.run(task)
 
-    def process_mind_map_request(self, task={'data': {'files': []}, 'output_path': 'mindmap.png'}): # Boilerplate
-        """
-        Post-message processing, MindMap Generator tool acts to generate maps for the user
-        """
-        self.mm.run(task)
+    # def process_mind_map_request(self, task={'data': {'files': []}, 'output_path': 'mindmap.png'}): # Boilerplate
+    #     """
+    #     Post-message processing, MindMap Generator tool acts to generate maps for the user
+    #     """
+    #     self.mm.run(task)
