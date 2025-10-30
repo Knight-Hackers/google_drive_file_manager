@@ -1,1 +1,18 @@
+# Virtual Environment
+frontend/node_modules
+backend/venv
+env
+env/
 .venv
+
+# Environment variables
+.env
+backend/.env
+backend/Agents/.env
+
+# Json variables
+.json
+backend/.json
+backend/Agents/.json
+backend/Agents/crack-saga-473919-e5-a50b5d990b61.json
+.pyc
